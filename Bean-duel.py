@@ -1,186 +1,221 @@
-'''
-Function:
-	吃豆豆小游戏
-'''
-import os
-import sys
-import pygame
-import Levels
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# Author: bei
+# 功能：迷宫绘制
 
+# import tkinter as tk
 
-'''定义一些必要的参数'''
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-RED = (153, 0, 0)
-GREY=(153,153,153)
-YELLOW = (204, 153, 0)
-PURPLE = (255, 0, 255)
-BLUE = (0, 102, 204)
-# os.path.join:连接两个或更多的路径名组件;os.getcwd():在Python中可以使用os.getcwd()函数获得当前的路径。
-BGMPATH = os.path.join(os.getcwd(), 'resources/sounds/bg.mp3')
-ICONPATH = os.path.join(os.getcwd(), 'resources/images/icon.png')
-FONTPATH = os.path.join(os.getcwd(), 'resources/font/ALGER.TTF')
-HEROPATH = os.path.join(os.getcwd(), 'resources/images/pacman.png')
-ashanPATH = os.path.join(os.getcwd(), 'resources/images/ashan.png')
-qiqiPATH = os.path.join(os.getcwd(), 'resources/images/qiqi.png')
-panghuPATH = os.path.join(os.getcwd(), 'resources/images/panghu.png')
-qingqingPATH = os.path.join(os.getcwd(), 'resources/images/qingqing.png')
+# 提供一些颜色，但是不一定全部用上
+BGC = '#ff0ff0ff0'# 白色
+FGC = '#000000000'# 黑色
+WKC = '#000fc0fc0'# 湖蓝
+VSC = '#0000000cf'# 黑色
+RRR = '#fff000000'# 红色
+GGG = '#000fff000'# 绿色
+BBB = '#000000fff'# 蓝色
+XXX = '#0ff0ff000'# 黑色
+LGB = '#8f08f0fff'# 浅蓝
 
+# 迷宫小格子尺寸
+ROOM_HEIGHT_IN_PIX = 35
+ROOM_WIDTH_IN_PIX = 35
 
-'''开始某一关游戏'''
-def startLevelGame(level, screen, font):
-	# clock=pygame.time.Clock()来定义时钟，调用CPU的时间
-	clock = pygame.time.Clock()
-	SCORE = 0
-	# 设置关卡中的各个元素，如食物、精灵等的颜色之类的
-	wall_sprites = level.setupWalls(BLUE)
-	gate_sprites = level.setupGate(YELLOW)
-	hero_sprites, ghost_sprites = level.setupPlayers(HEROPATH, [ashanPATH, qiqiPATH, panghuPATH, qingqingPATH])
-	food_sprites = level.setupFood(YELLOW, WHITE)
-	is_clearance = False
-	while True:
-		# pygame中通过pygame.event.get()获得用户当前所做动作的时间列表，用户可以在同一时间做很多事情
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				sys.exit(-1)		# sys.exit(-1):有错误退出
-				pygame.quit()
-			if event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_LEFT:		# pygame.K_LEFT:左键
-					for hero in hero_sprites:
-						hero.changeSpeed([-1, 0])		# “-1”表示沿x轴向左一步
-						hero.is_move = True
-				elif event.key == pygame.K_RIGHT:	 # pygame.K_RIGHT:右键
-					for hero in hero_sprites:
-						hero.changeSpeed([1, 0])		# ”1“表示沿x轴向右一步
-						hero.is_move = True
-				elif event.key == pygame.K_UP:		# pygame.K_UP:上键
-					for hero in hero_sprites:
-						hero.changeSpeed([0, -1])		# ”-1“表示沿y轴向上一步
-						hero.is_move = True
-				elif event.key == pygame.K_DOWN:	 # pygame.K_DOWN:下键
-					for hero in hero_sprites:
-						hero.changeSpeed([0, 1])		# ”1“表示沿y轴向下一步
-						hero.is_move = True
-			if event.type == pygame.KEYUP:
-				if (event.key == pygame.K_LEFT) or (event.key == pygame.K_RIGHT) or (event.key == pygame.K_UP) or (event.key == pygame.K_DOWN):
-					hero.is_move = False
-		screen.fill(BLACK)			# 游戏界面背景色为黑色,若是原本未定义BLACK的RGB，则直接写成screen.fill((0,0,0))亦可
-		for hero in hero_sprites:
-			hero.update(wall_sprites, gate_sprites)
-		hero_sprites.draw(screen)
-		for hero in hero_sprites:
-			# pygame.sprite.spritecollide()这个函数的第一个参数就是单个精灵-吃豆精灵，第二个参数是精灵组-食物豆，第三个参数是一个bool值，
-			# 最后这个参数起了很大的作用。当为True的时候，会删除组中所有冲突的精灵，False的时候不会删除冲突的精灵
-			# 此处为True，即发生碰撞，因此这个碰撞检测机制被触动，所以会将发生冲突的精灵即“食物豆”删除掉以实现“豆”被吃掉的效果。
-			food_eaten = pygame.sprite.spritecollide(hero, food_sprites, True)
-		# SCORE:分数通过对被吃掉的都的长度进行累加从而实现
-		SCORE += len(food_eaten)
-		wall_sprites.draw(screen)
-		gate_sprites.draw(screen)
-		food_sprites.draw(screen)
-		for ghost in ghost_sprites:
-			if ghost.tracks_loc[1] < ghost.tracks[ghost.tracks_loc[0]][2]:
-				ghost.changeSpeed(ghost.tracks[ghost.tracks_loc[0]][0:2])
-				ghost.tracks_loc[1] += 1
-			else:
-				if ghost.tracks_loc[0] < len(ghost.tracks) - 1:
-					ghost.tracks_loc[0] += 1
-				elif ghost.role_name == 'ashan':
-					ghost.tracks_loc[0] = 2
-				else:
-					ghost.tracks_loc[0] = 0
-				ghost.changeSpeed(ghost.tracks[ghost.tracks_loc[0]][0: 2])
-				ghost.tracks_loc[1] = 0
-			if ghost.tracks_loc[1] < ghost.tracks[ghost.tracks_loc[0]][2]:
-				ghost.changeSpeed(ghost.tracks[ghost.tracks_loc[0]][0: 2])
-			else:
-				if ghost.tracks_loc[0] < len(ghost.tracks) - 1:
-					loc0 = ghost.tracks_loc[0] + 1
-				elif ghost.role_name == 'qiqi':
-					loc0 = 2
-				else:
-					loc0 = 0
-				ghost.changeSpeed(ghost.tracks[loc0][0: 2])
-			ghost.update(wall_sprites, None)
-		ghost_sprites.draw(screen)
-		score_text = font.render("Score: %s" % SCORE, True, RED)
-		screen.blit(score_text, [10, 10])
-		if len(food_sprites) == 0:
-			is_clearance = True
-			break
-		if pygame.sprite.groupcollide(hero_sprites, ghost_sprites, False, False):
-			is_clearance = False
-			break
-		pygame.display.flip()
-		clock.tick(10)
-	return is_clearance
+# Wall-IDs也就是墙的ID
+U_WALL = 1
+R_WALL = 2
+D_WALL = 4
+L_WALL = 8
 
+# 整个迷宫到顶部距离
+x_offset = 30
+# 整个迷宫到左部距离
+y_offset = 30
 
-'''显示文字'''
-def showText(screen, font, is_clearance, flag=False):
-	clock = pygame.time.Clock()
-	msg = 'Game Over!' if not is_clearance else 'Congratulations, you won!'
-	positions = [[235, 233], [65, 303], [170, 333]] if not is_clearance else [[145, 233], [65, 303], [170, 333]]
-	surface = pygame.Surface((400, 200))
-	surface.set_alpha(10)
-	surface.fill((128, 128, 128))
-	screen.blit(surface, (100, 200))
-	texts = [font.render(msg, True,GREY),
-			 font.render('Press ENTER to continue or play again.', True, GREY),
-			 font.render('Press ESCAPE to quit.', True, GREY)]
-	while True:
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				sys.exit()
-				pygame.quit()
-			if event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_RETURN:
-					if is_clearance:
-						if not flag:
-							return
-						else:
-							main(initialize())
-					else:
-						main(initialize())
-				elif event.key == pygame.K_ESCAPE:
-					sys.exit()
-					pygame.quit()
-		for idx, (text, position) in enumerate(zip(texts, positions)):
-			screen.blit(text, position)
-		pygame.display.flip()
-		clock.tick(10)
+class MazeGraphics(object):
+    DEBUG = 0
+    roomheight = ROOM_HEIGHT_IN_PIX
+    roomwidth = ROOM_WIDTH_IN_PIX
+    walker = (0, 0) # 迷宫里可行走的小蓝点初始化
+    mz = [] # 迷宫的表示
+    
+    class Room(object):
+        # Maze room
+        def __init__(self, field, loc, width, height):
+            self.field = field
+            # 角点和中心点
+            self.loc = loc
+            x0, y0 = loc # 左上
+            self.ld = (x0 + width, y0) # 右上
+            self.ru = (x0, y0 + height) # 左下
+            self.rd = (x0 + width, y0 + height) # 右下
+            self.center = (x0 + width//2, y0 + height//2)
+            # 很多墙，也就是障碍
+            x1, y1 = self.ru
+            x2, y2 = self.rd
+            x3, y3 = self.ld
+            self.uw = field.create_line(y0, x0, y1, x1, fill=FGC, disabledfill=BGC)
+            self.rw = field.create_line(y1, x1, y2, x2, fill=FGC, disabledfill=BGC)
+            self.dw = field.create_line(y2, x2, y3, x3, fill=FGC, disabledfill=BGC)
+            self.lw = field.create_line(y3, x3, y0, x0, fill=FGC, disabledfill=BGC) #绘制墙的线
+            # walker
+            x0 += 2
+            y0 += 2
+            x2 -= 2
+            y2 -= 2
+            self.wlk = field.create_oval(y0, x0, y2, x2, fill=BGC, disabledfill=BGC, outline=BGC)
+            #绘制球
 
+        def clear(self):
+            self.field.itemconfigure(self.uw, fill=FGC)
+            self.field.itemconfigure(self.rw, fill=FGC)
+            self.field.itemconfigure(self.dw, fill=FGC)
+            self.field.itemconfigure(self.lw, fill=FGC)
+            self.field.itemconfigure(self.wlk, fill=BGC)
+        # 设置小蓝点的颜色
+        def setWalker(self):
+            self.field.itemconfigure(self.wlk, fill=BBB)
 
-'''初始化'''
-def initialize():
-	pygame.init()
-	icon_image = pygame.image.load(ICONPATH)
-	pygame.display.set_icon(icon_image)
-	screen = pygame.display.set_mode([606, 606])
-	pygame.display.set_caption('吃豆精灵--19网络工程1班吴家欣--Linux期末大作业')
-	return screen
+        # 设置“悄悄看答案”部分小蓝点的颜色为绿色
+        def setWalkerAnswer(self):
+            self.field.itemconfigure(self.wlk, fill=GGG)
 
+        # 清除小点颜色
+        def clearWalker(self):
+            self.field.itemconfigure(self.wlk, fill=BGC)
 
-'''主函数'''
-def main(screen):
-	pygame.mixer.init()			# 初始化混音器模块
-	pygame.mixer.music.load(BGMPATH)
-	pygame.mixer.music.play(-1, 0.0)
-	pygame.font.init()
-	font_small = pygame.font.Font(FONTPATH, 18)
-	font_big = pygame.font.Font(FONTPATH, 24)
-	for num_level in range(1, Levels.NUMLEVELS+1):
-		if num_level == 1:
-			level = Levels.Level1()
-			is_clearance = startLevelGame(level, screen, font_small)
-			if num_level == Levels.NUMLEVELS:
-				showText(screen, font_big, is_clearance, True)
-			else:
-				showText(screen, font_big, is_clearance)
-	
+        # 标记为浅蓝色
+        def markWalker(self):
+            self.field.itemconfigure(self.wlk, fill=LGB)
 
-'''test'''
-if __name__ == '__main__':
-	main(initialize())
+        # 设置“悄悄看答案”部分，标记为浅蓝色
+        def markWalkerAnswer(self):
+            self.field.itemconfigure(self.wlk, fill=GGG)
+
+        def markVisited(self):
+            # 为了 debugging
+            self.field.itemconfigure(self.wlk, fill=VSC)
+            
+        def breakWall(self, wall):
+            if wall == U_WALL:
+                #self.field.itemconfigure(self.uw, width=4)
+                self.field.itemconfigure(self.uw, fill=BGC)
+            elif wall == R_WALL:
+                #self.field.itemconfigure(self.rw, width=4)
+                self.field.itemconfigure(self.rw, fill=BGC)
+            elif wall == D_WALL:
+                #self.field.itemconfigure(self.dw, width=4)
+                self.field.itemconfigure(self.dw, fill=BGC)
+            elif wall == L_WALL:
+                #self.field.itemconfigure(self.lw, width=4)
+                self.field.itemconfigure(self.lw, fill=BGC)
+                
+        def markCell(self, color):
+            self.field.itemconfigure(self.wlk, fill=color)
+            #pass
+            
+    def __init__(self, field, x, y):
+        self.field = field
+        self.width = y
+        self.height = x
+        # 建立迷宫格子
+        for i in range(0, x):
+            self.mz.append([])
+            for j in range(0, y):
+                loc = (i*self.roomheight+x_offset, j*self.roomwidth+y_offset)
+                rm = self.Room(field, loc, self.roomwidth, self.roomheight)
+                self.mz[i].append(rm)
+
+    def clear(self):
+        # 重置迷宫，初始化迷宫状态
+        x, y = self.walker
+        self.mz[x][y].clearWalker()
+        self.walker = (0,0)
+        for i in range(0, self.height):
+            for j in range(0, self.width):
+                self.mz[i][j].clear()
+
+    def breakWall(self, x, y, w):
+        # 生成入口和出口
+        if w == 'U':
+            self.mz[x][y].breakWall(U_WALL)
+        else:
+            self.mz[x][y].breakWall(D_WALL)
+            
+    def connectRooms(self, x, y, x1, y1):
+        # 打破两个room之间的墙，连接起来
+        if x == x1:
+            if y < y1:
+                if self.DEBUG != 0:
+                    self.mz[x][y].markCell('#ff0000000')
+                    self.mz[x1][y1].markCell('#ff0000000')
+                    print("Connect rooms: (",x,",",y,") R_WALL and (",x1,",",y1,") L_WALL")
+                self.mz[x][y].breakWall(R_WALL)
+                self.mz[x1][y1].breakWall(L_WALL)
+            else:
+                if self.DEBUG != 0:
+                    self.mz[x][y].markCell('#ff0000000')
+                    self.mz[x1][y1].markCell('#ff0000000')
+                    print("Connect rooms: (",x,",",y,") L_WALL and (",x1,",",y1,") R_WALL")
+                self.mz[x][y].breakWall(L_WALL)
+                self.mz[x1][y1].breakWall(R_WALL)
+        else:
+            if x < x1:
+                if self.DEBUG != 0:
+                    self.mz[x][y].markCell('#ff0000000')
+                    self.mz[x1][y1].markCell('#ff0000000')
+                    print("Connect rooms: (",x,",",y,") D_WALL and (",x1,",",y1,") U_WALL")
+                self.mz[x][y].breakWall(D_WALL)
+                self.mz[x1][y1].breakWall(U_WALL)
+            else:
+                if self.DEBUG != 0:
+                    self.mz[x][y].markCell('#ff0000000')
+                    self.mz[x1][y1].markCell('#ff0000000')
+                    print("Connect rooms: (",x,",",y,") U_WALL and (",x1,",",y1,") D_WALL")
+                self.mz[x][y].breakWall(U_WALL)
+                self.mz[x1][y1].breakWall(D_WALL)
+
+    # 清除
+    def clearWalker(self, i, j):
+        self.mz[i][j].clearWalker()
+        
+    def setGoal(self, i, j):
+        # 使出口处更加可见
+        self.mz[i][j].markCell(RRR)
+
+    def setWalker(self, i, j):
+        # 使小点从一个格子到另个格子
+        x, y = self.walker
+
+        #  测试####################################
+
+        # print("graph: walker = ", self.walker, " to ", (i ,j))
+
+        self.mz[x][y].clearWalker()
+        self.mz[i][j].setWalker()
+        self.walker = (i, j)
+
+    # 手动操作部分的移动轨迹
+    def moveWalker(self, i, j):
+        # 移动蓝点从一个格子到另一个格子离开的踪迹
+        x, y = self.walker
+
+        ###############  踪迹测试
+        #print("graph: walker = ", self.walker, " to ", (i ,j))
+        #self.mz[x][y].clearWalker()
+
+        self.mz[x][y].markWalker()
+        self.mz[i][j].setWalker()
+        self.walker = (i, j)
+
+    # “悄悄看答案”部分的移动轨迹
+    def moveWalkerAnswer(self, i, j):
+        # 移动蓝点从一个格子到另一个格子离开的踪迹
+        x, y = self.walker
+
+        ##############  踪迹测试
+        # print("graph: walker = ", self.walker, " to ", (i ,j))
+        # self.mz[x][y].clearWalker()
+
+        self.mz[x][y].markWalkerAnswer()
+        self.mz[i][j].setWalkerAnswer()
+        self.walker = (i, j)
